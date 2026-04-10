@@ -25,12 +25,24 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 
 const emptyProduct = { name: '', description: '', price: '', image_url: '', category: 'bouquet', color: '', in_stock: true };
 
+const uploadImage = async (file: File): Promise<string> => {
+  const ext = file.name.split('.').pop();
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('product-images').upload(path, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: orders } = useQuery({
     queryKey: ['admin-orders'],
@@ -68,11 +80,16 @@ const AdminDashboard = () => {
 
   const saveProduct = useMutation({
     mutationFn: async () => {
+      setUploading(true);
+      let imageUrl = productForm.image_url || null;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
       const payload = {
         name: productForm.name,
         description: productForm.description || null,
         price: parseFloat(productForm.price),
-        image_url: productForm.image_url || null,
+        image_url: imageUrl,
         category: productForm.category,
         color: productForm.color || null,
         in_stock: productForm.in_stock,
@@ -92,9 +109,12 @@ const AdminDashboard = () => {
       setDialogOpen(false);
       setProductForm(emptyProduct);
       setEditingId(null);
+      setImageFile(null);
+      setImagePreview(null);
+      setUploading(false);
       toast.success(editingId ? 'Товар обновлён' : 'Товар добавлен');
     },
-    onError: () => toast.error('Ошибка при сохранении'),
+    onError: () => { setUploading(false); toast.error('Ошибка при сохранении'); },
   });
 
   const deleteProduct = useMutation({
@@ -119,7 +139,18 @@ const AdminDashboard = () => {
       color: p.color || '',
       in_stock: p.in_stock,
     });
+    setImageFile(null);
+    setImagePreview(p.image_url || null);
     setDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setProductForm(f => ({ ...f, image_url: '' }));
+    }
   };
 
   if (loading) {
