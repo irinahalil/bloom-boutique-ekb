@@ -25,12 +25,24 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 
 const emptyProduct = { name: '', description: '', price: '', image_url: '', category: 'bouquet', color: '', in_stock: true };
 
+const uploadImage = async (file: File): Promise<string> => {
+  const ext = file.name.split('.').pop();
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('product-images').upload(path, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: orders } = useQuery({
     queryKey: ['admin-orders'],
@@ -68,11 +80,16 @@ const AdminDashboard = () => {
 
   const saveProduct = useMutation({
     mutationFn: async () => {
+      setUploading(true);
+      let imageUrl = productForm.image_url || null;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
       const payload = {
         name: productForm.name,
         description: productForm.description || null,
         price: parseFloat(productForm.price),
-        image_url: productForm.image_url || null,
+        image_url: imageUrl,
         category: productForm.category,
         color: productForm.color || null,
         in_stock: productForm.in_stock,
@@ -92,9 +109,12 @@ const AdminDashboard = () => {
       setDialogOpen(false);
       setProductForm(emptyProduct);
       setEditingId(null);
+      setImageFile(null);
+      setImagePreview(null);
+      setUploading(false);
       toast.success(editingId ? 'Товар обновлён' : 'Товар добавлен');
     },
-    onError: () => toast.error('Ошибка при сохранении'),
+    onError: () => { setUploading(false); toast.error('Ошибка при сохранении'); },
   });
 
   const deleteProduct = useMutation({
@@ -119,7 +139,18 @@ const AdminDashboard = () => {
       color: p.color || '',
       in_stock: p.in_stock,
     });
+    setImageFile(null);
+    setImagePreview(p.image_url || null);
     setDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setProductForm(f => ({ ...f, image_url: '' }));
+    }
   };
 
   if (loading) {
@@ -191,7 +222,7 @@ const AdminDashboard = () => {
           <TabsContent value="products">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-full mb-6" onClick={() => { setEditingId(null); setProductForm(emptyProduct); }}>
+                <Button className="rounded-full mb-6" onClick={() => { setEditingId(null); setProductForm(emptyProduct); setImageFile(null); setImagePreview(null); }}>
                   <Plus className="w-4 h-4 mr-1" /> Добавить товар
                 </Button>
               </DialogTrigger>
@@ -206,7 +237,15 @@ const AdminDashboard = () => {
                   <Input placeholder="Название *" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} required maxLength={200} />
                   <Textarea placeholder="Описание" value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} />
                   <Input placeholder="Цена *" type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} required />
-                  <Input placeholder="URL изображения" value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} maxLength={500} />
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Изображение</label>
+                    {imagePreview && (
+                      <img src={imagePreview} alt="Превью" className="w-full h-32 object-cover rounded-xl mb-2" />
+                    )}
+                    <Input type="file" accept="image/*" onChange={handleFileChange} />
+                    <p className="text-xs text-muted-foreground mt-1">Или вставьте URL:</p>
+                    <Input placeholder="URL изображения" value={productForm.image_url} onChange={e => { setProductForm(f => ({ ...f, image_url: e.target.value })); setImageFile(null); setImagePreview(e.target.value || null); }} maxLength={500} className="mt-1" />
+                  </div>
                   <Select value={productForm.category} onValueChange={v => setProductForm(f => ({ ...f, category: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -220,8 +259,8 @@ const AdminDashboard = () => {
                     <input type="checkbox" checked={productForm.in_stock} onChange={e => setProductForm(f => ({ ...f, in_stock: e.target.checked }))} />
                     В наличии
                   </label>
-                  <Button type="submit" className="w-full rounded-full" disabled={saveProduct.isPending}>
-                    {saveProduct.isPending ? 'Сохранение...' : 'Сохранить'}
+                  <Button type="submit" className="w-full rounded-full" disabled={saveProduct.isPending || uploading}>
+                    {uploading ? 'Загрузка фото...' : saveProduct.isPending ? 'Сохранение...' : 'Сохранить'}
                   </Button>
                 </form>
               </DialogContent>
