@@ -222,7 +222,7 @@ const AdminDashboard = () => {
           <TabsContent value="products">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-full mb-6" onClick={() => { setEditingId(null); setProductForm(emptyProduct); }}>
+                <Button className="rounded-full mb-6" onClick={() => { setEditingId(null); setProductForm(emptyProduct); setImageFile(null); setImagePreview(null); }}>
                   <Plus className="w-4 h-4 mr-1" /> Добавить товар
                 </Button>
               </DialogTrigger>
@@ -237,7 +237,15 @@ const AdminDashboard = () => {
                   <Input placeholder="Название *" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} required maxLength={200} />
                   <Textarea placeholder="Описание" value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} />
                   <Input placeholder="Цена *" type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} required />
-                  <Input placeholder="URL изображения" value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} maxLength={500} />
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Изображение</label>
+                    {imagePreview && (
+                      <img src={imagePreview} alt="Превью" className="w-full h-32 object-cover rounded-xl mb-2" />
+                    )}
+                    <Input type="file" accept="image/*" onChange={handleFileChange} />
+                    <p className="text-xs text-muted-foreground mt-1">Или вставьте URL:</p>
+                    <Input placeholder="URL изображения" value={productForm.image_url} onChange={e => { setProductForm(f => ({ ...f, image_url: e.target.value })); setImageFile(null); setImagePreview(e.target.value || null); }} maxLength={500} className="mt-1" />
+                  </div>
                   <Select value={productForm.category} onValueChange={v => setProductForm(f => ({ ...f, category: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
