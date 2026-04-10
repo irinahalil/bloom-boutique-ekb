@@ -49,7 +49,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, order_items(*, products(name, image_url))')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
