@@ -259,8 +259,8 @@ const AdminDashboard = () => {
                     <input type="checkbox" checked={productForm.in_stock} onChange={e => setProductForm(f => ({ ...f, in_stock: e.target.checked }))} />
                     В наличии
                   </label>
-                  <Button type="submit" className="w-full rounded-full" disabled={saveProduct.isPending}>
-                    {saveProduct.isPending ? 'Сохранение...' : 'Сохранить'}
+                  <Button type="submit" className="w-full rounded-full" disabled={saveProduct.isPending || uploading}>
+                    {uploading ? 'Загрузка фото...' : saveProduct.isPending ? 'Сохранение...' : 'Сохранить'}
                   </Button>
                 </form>
               </DialogContent>
