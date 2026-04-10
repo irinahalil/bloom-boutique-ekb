@@ -226,13 +226,13 @@ const AdminDashboard = () => {
                   <Plus className="w-4 h-4 mr-1" /> Добавить товар
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-display text-xl">{editingId ? 'Редактировать' : 'Новый товар'}</DialogTitle>
                 </DialogHeader>
                 <form
                   onSubmit={e => { e.preventDefault(); saveProduct.mutate(); }}
-                  className="space-y-4"
+                  className="space-y-4 pb-2"
                 >
                   <Input placeholder="Название *" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} required maxLength={200} />
                   <Textarea placeholder="Описание" value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} />
