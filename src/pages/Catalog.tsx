@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 const categories = [
   { value: '', label: 'Все' },
   { value: 'bouquet', label: 'Букеты' },
-  { value: 'box', label: 'В коробке' },
+  { value: 'box', label: 'В корзине' },
   { value: 'single', label: 'Поштучно' },
 ];
 
