@@ -206,7 +206,7 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  )
+                  )}
                   <div className="flex items-center gap-3">
                     <Badge variant={statusLabels[order.status]?.variant || 'default'}>
                       {statusLabels[order.status]?.label || order.status}
