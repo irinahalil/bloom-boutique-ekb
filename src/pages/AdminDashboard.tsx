@@ -49,7 +49,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, order_items(*, products(name, image_url))')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -193,6 +193,20 @@ const AdminDashboard = () => {
                       <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString('ru')}</p>
                     </div>
                   </div>
+                  {order.order_items && order.order_items.length > 0 && (
+                    <div className="mb-3 border-t pt-3 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Состав заказа:</p>
+                      {order.order_items.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-2 text-sm">
+                          {item.products?.image_url && (
+                            <img src={item.products.image_url} alt="" className="w-8 h-8 rounded object-cover" />
+                          )}
+                          <span className="flex-1">{item.products?.name || 'Товар удалён'}</span>
+                          <span className="text-muted-foreground">{item.quantity} шт × {item.price} ₽</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center gap-3">
                     <Badge variant={statusLabels[order.status]?.variant || 'default'}>
                       {statusLabels[order.status]?.label || order.status}
