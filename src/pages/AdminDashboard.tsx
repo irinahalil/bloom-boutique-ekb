@@ -1,0 +1,263 @@
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import Layout from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Plus, LogOut, Pencil, Trash2 } from 'lucide-react';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Product = Tables<'products'>;
+
+const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+  new: { label: 'Новый', variant: 'default' },
+  in_progress: { label: 'В работе', variant: 'secondary' },
+  done: { label: 'Выполнен', variant: 'outline' },
+};
+
+const emptyProduct = { name: '', description: '', price: '', image_url: '', category: 'bouquet', color: '', in_stock: true };
+
+const AdminDashboard = () => {
+  const { user, isAdmin, loading, signOut } = useAuth();
+  const queryClient = useQueryClient();
+  const [productForm, setProductForm] = useState(emptyProduct);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: orders } = useQuery({
+    queryKey: ['admin-orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+
+  const { data: products } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+
+  const updateOrderStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('orders').update({ status: status as 'new' | 'in_progress' | 'done' }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      toast.success('Статус обновлён');
+    },
+  });
+
+  const saveProduct = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: productForm.name,
+        description: productForm.description || null,
+        price: parseFloat(productForm.price),
+        image_url: productForm.image_url || null,
+        category: productForm.category,
+        color: productForm.color || null,
+        in_stock: productForm.in_stock,
+      };
+      if (editingId) {
+        const { error } = await supabase.from('products').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('products').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['featured-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setDialogOpen(false);
+      setProductForm(emptyProduct);
+      setEditingId(null);
+      toast.success(editingId ? 'Товар обновлён' : 'Товар добавлен');
+    },
+    onError: () => toast.error('Ошибка при сохранении'),
+  });
+
+  const deleteProduct = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      toast.success('Товар удалён');
+    },
+  });
+
+  const openEdit = (p: Product) => {
+    setEditingId(p.id);
+    setProductForm({
+      name: p.name,
+      description: p.description || '',
+      price: String(p.price),
+      image_url: p.image_url || '',
+      category: p.category,
+      color: p.color || '',
+      in_stock: p.in_stock,
+    });
+    setDialogOpen(true);
+  };
+
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center min-h-[60vh]"><p>Загрузка...</p></div></Layout>;
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-display text-3xl font-bold">Админ-панель</h1>
+          <Button variant="ghost" size="sm" onClick={signOut}>
+            <LogOut className="w-4 h-4 mr-1" /> Выйти
+          </Button>
+        </div>
+
+        <Tabs defaultValue="orders">
+          <TabsList className="mb-6">
+            <TabsTrigger value="orders">Заказы {orders ? `(${orders.length})` : ''}</TabsTrigger>
+            <TabsTrigger value="products">Товары {products ? `(${products.length})` : ''}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            <div className="space-y-4">
+              {orders?.map(order => (
+                <div key={order.id} className="bg-card border rounded-2xl p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
+                    <div>
+                      <p className="font-medium">{order.customer_name}</p>
+                      <p className="text-sm text-muted-foreground">{order.phone}</p>
+                      <p className="text-sm text-muted-foreground">{order.address}</p>
+                      {order.comment && <p className="text-sm text-muted-foreground italic mt-1">«{order.comment}»</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display text-lg font-semibold">{order.total} ₽</p>
+                      <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString('ru')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={statusLabels[order.status]?.variant || 'default'}>
+                      {statusLabels[order.status]?.label || order.status}
+                    </Badge>
+                    <Select
+                      value={order.status}
+                      onValueChange={(v) => updateOrderStatus.mutate({ id: order.id, status: v })}
+                    >
+                      <SelectTrigger className="w-40 h-8 text-xs rounded-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">Новый</SelectItem>
+                        <SelectItem value="in_progress">В работе</SelectItem>
+                        <SelectItem value="done">Выполнен</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+              {orders?.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">Заказов пока нет</p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full mb-6" onClick={() => { setEditingId(null); setProductForm(emptyProduct); }}>
+                  <Plus className="w-4 h-4 mr-1" /> Добавить товар
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-xl">{editingId ? 'Редактировать' : 'Новый товар'}</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={e => { e.preventDefault(); saveProduct.mutate(); }}
+                  className="space-y-4"
+                >
+                  <Input placeholder="Название *" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} required maxLength={200} />
+                  <Textarea placeholder="Описание" value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} />
+                  <Input placeholder="Цена *" type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} required />
+                  <Input placeholder="URL изображения" value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} maxLength={500} />
+                  <Select value={productForm.category} onValueChange={v => setProductForm(f => ({ ...f, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bouquet">Букет</SelectItem>
+                      <SelectItem value="box">В коробке</SelectItem>
+                      <SelectItem value="single">Поштучно</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder="Цвет (red, pink, white...)" value={productForm.color} onChange={e => setProductForm(f => ({ ...f, color: e.target.value }))} maxLength={50} />
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={productForm.in_stock} onChange={e => setProductForm(f => ({ ...f, in_stock: e.target.checked }))} />
+                    В наличии
+                  </label>
+                  <Button type="submit" className="w-full rounded-full" disabled={saveProduct.isPending}>
+                    {saveProduct.isPending ? 'Сохранение...' : 'Сохранить'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <div className="space-y-3">
+              {products?.map(p => (
+                <div key={p.id} className="flex items-center gap-4 bg-card border rounded-xl p-4">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">🌷</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{p.name}</p>
+                    <p className="text-sm text-muted-foreground">{p.price} ₽ · {p.category} {!p.in_stock && '· Нет в наличии'}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => { if (confirm('Удалить товар?')) deleteProduct.mutate(p.id); }}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+              {products?.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">Товаров пока нет</p>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+};
+
+export default AdminDashboard;
