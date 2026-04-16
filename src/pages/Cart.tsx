@@ -1,24 +1,47 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, addDays } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Minus, Plus, Trash2, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+const timeSlots = [
+  '09:00–12:00',
+  '12:00–15:00',
+  '15:00–18:00',
+  '18:00–21:00',
+];
 
 const Cart = () => {
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', address: '', comment: '' });
+  const [deliveryDate, setDeliveryDate] = useState<Date>();
+  const [deliveryTime, setDeliveryTime] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
       toast.error('Заполните обязательные поля');
+      return;
+    }
+    if (!deliveryDate) {
+      toast.error('Выберите дату доставки');
+      return;
+    }
+    if (!deliveryTime) {
+      toast.error('Выберите время доставки');
       return;
     }
     if (items.length === 0) return;
@@ -36,6 +59,8 @@ const Cart = () => {
           address: form.address.trim(),
           comment: form.comment.trim() || null,
           total: totalPrice,
+          delivery_date: format(deliveryDate, 'yyyy-MM-dd'),
+          delivery_time: deliveryTime,
         });
 
       if (orderError) throw orderError;
@@ -151,6 +176,51 @@ const Cart = () => {
                   maxLength={255}
                 />
               </div>
+
+              {/* Delivery date */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Дата доставки *</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal rounded-xl',
+                        !deliveryDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {deliveryDate ? format(deliveryDate, 'd MMMM yyyy', { locale: ru }) : 'Выберите дату'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={deliveryDate}
+                      onSelect={setDeliveryDate}
+                      disabled={(date) => date < addDays(new Date(), 1)}
+                      initialFocus
+                      className={cn('p-3 pointer-events-auto')}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Delivery time */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Время доставки *</label>
+                <Select value={deliveryTime} onValueChange={setDeliveryTime}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Выберите время" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map(slot => (
+                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <label className="text-sm font-medium mb-1 block">Комментарий</label>
                 <Textarea
