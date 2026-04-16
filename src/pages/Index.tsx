@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import Layout from '@/components/Layout';
-import { Truck, Clock, Flower2, ArrowRight } from 'lucide-react';
+import { Truck, Clock, Flower2, ArrowRight, Search } from 'lucide-react';
 
 const Index = () => {
   const { data: products } = useQuery({
@@ -41,6 +41,7 @@ const Index = () => {
             </p>
             <Link to="/catalog">
               <Button size="lg" className="rounded-full px-8 text-base">
+                <Search className="w-4 h-4 mr-2" />
                 Выбрать букет
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
