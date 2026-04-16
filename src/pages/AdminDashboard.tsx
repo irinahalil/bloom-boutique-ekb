@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, LogOut, Pencil, Trash2, CalendarDays, Clock, TrendingUp } from 'lucide-react';
+import { Plus, LogOut, Pencil, Trash2, CalendarDays, Clock, TrendingUp, MessageSquare } from 'lucide-react';
+import AdminChats from '@/components/AdminChats';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Tables } from '@/integrations/supabase/types';
@@ -208,6 +209,9 @@ const AdminDashboard = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="orders">Заказы {orders ? `(${orders.length})` : ''}</TabsTrigger>
             <TabsTrigger value="products">Товары {products ? `(${products.length})` : ''}</TabsTrigger>
+            <TabsTrigger value="chats">
+              <MessageSquare className="w-4 h-4 mr-1" /> Чаты
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
@@ -370,6 +374,10 @@ const AdminDashboard = () => {
                 <p className="text-center text-muted-foreground py-12">Товаров пока нет</p>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="chats">
+            <AdminChats />
           </TabsContent>
         </Tabs>
       </div>
