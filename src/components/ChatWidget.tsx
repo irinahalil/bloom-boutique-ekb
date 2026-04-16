@@ -83,6 +83,7 @@ const ChatWidget = () => {
     setLoading(false);
   }, [sessionId, escalated, loading]);
 
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || loading || !sessionId) return;
     const text = input.trim();
     setInput('');
