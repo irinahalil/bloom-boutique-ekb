@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
+import { isToday, isThisWeek, isThisMonth } from 'date-fns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, LogOut, Pencil, Trash2, CalendarDays, Clock } from 'lucide-react';
+import { Plus, LogOut, Pencil, Trash2, CalendarDays, Clock, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Tables } from '@/integrations/supabase/types';
@@ -69,6 +70,19 @@ const AdminDashboard = () => {
     },
     enabled: isAdmin,
   });
+
+  const revenue = useMemo(() => {
+    const doneOrders = (orders ?? []).filter(o => o.status === 'done');
+    const calc = (filterFn: (date: Date) => boolean) => {
+      const filtered = doneOrders.filter(o => filterFn(new Date(o.created_at)));
+      return { total: filtered.reduce((s, o) => s + Number(o.total), 0), count: filtered.length };
+    };
+    return {
+      today: calc(d => isToday(d)),
+      week: calc(d => isThisWeek(d, { weekStartsOn: 1 })),
+      month: calc(d => isThisMonth(d)),
+    };
+  }, [orders]);
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -172,6 +186,22 @@ const AdminDashboard = () => {
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="w-4 h-4 mr-1" /> Выйти
           </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {[
+            { label: 'Сегодня', ...revenue.today },
+            { label: 'Неделя', ...revenue.week },
+            { label: 'Месяц', ...revenue.month },
+          ].map(s => (
+            <div key={s.label} className="bg-card border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-1">{s.label}</p>
+              <p className="font-display text-2xl font-bold">{s.total.toLocaleString('ru-RU')} ₽</p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> {s.count} {s.count === 1 ? 'заказ' : s.count < 5 ? 'заказа' : 'заказов'}
+              </p>
+            </div>
+          ))}
         </div>
 
         <Tabs defaultValue="orders">
