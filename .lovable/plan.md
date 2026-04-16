@@ -1,24 +1,57 @@
 
 
-# Plan: Revenue Dashboard in Admin Panel
+# План: AI-чат-бот + Панель чатов в админке
 
-## Overview
-Add a revenue summary section at the top of the Admin Dashboard showing earnings for today, this week, and this month, based on completed orders.
+## Обзор
 
-## Changes
+Плавающая кнопка чата в правом нижнем углу сайта. Пользователь вводит имя и телефон, принимает политику конфиденциальности, после чего попадает в чат с AI-ассистентом, который знает каталог товаров. AI помогает выбрать букет, считает стоимость и может оформить заказ. При затруднениях — эскалация на живого оператора. Все чаты видны в админ-панели.
 
-### `src/pages/AdminDashboard.tsx`
-- Add a revenue stats bar above the Tabs component
-- Calculate revenue from orders with status "done" using `useMemo`:
-  - **Today**: sum of orders created today
-  - **This week**: sum of orders from the last 7 days
-  - **This month**: sum of orders from the current calendar month
-- Display as three card-style blocks with labels and formatted amounts (e.g., "12 500 ₽")
-- Include order count for each period
+## База данных (2 новые таблицы)
 
-## Technical details
-- Revenue computed client-side from already-fetched `orders` data (no new queries needed)
-- Uses `date-fns` for date comparisons (`isToday`, `isThisWeek`, `isThisMonth`)
-- Cards use existing `bg-card border rounded-2xl` styling to match the design
-- Only counts orders with status `done` for accurate revenue tracking
+### `chat_sessions`
+- `id`, `customer_name`, `phone`, `needs_operator` (флаг эскалации), `created_at`
+
+### `chat_messages`
+- `id`, `session_id` (FK), `role` (user/assistant/operator), `content`, `created_at`
+
+### RLS-политики
+- Анонимные пользователи могут создавать сессии и сообщения
+- Чтение сообщений — открыто (фильтрация по session_id на клиенте)
+- Админы видят все сессии, могут обновлять и отвечать как оператор
+- Realtime включён для обеих таблиц
+
+## Edge-функция: `chat-assistant`
+
+- Получает `{ session_id, messages }`
+- Загружает каталог товаров из БД и формирует системный промпт с названиями, ценами, категориями, наличием
+- Использует модель `google/gemini-3-flash-preview` через Lovable AI
+- Поддерживает tool calling: инструмент `place_order` для оформления заказа прямо из чата
+- При невозможности помочь — ставит флаг `needs_operator = true`
+
+## Фронтенд
+
+### Компонент `ChatWidget`
+1. **Закрытое состояние**: круглая кнопка в правом нижнем углу с иконкой сообщения
+2. **Регистрация**: имя, телефон, галочка политики конфиденциальности → создаёт `chat_session`
+3. **Чат**: список сообщений + поле ввода, потоковый ответ AI, сохранение в БД
+4. **Эскалация**: при эскалации — сообщение "Оператор подключится в ближайшее время", подписка на realtime для ответов оператора
+
+### Интеграция
+- `<ChatWidget />` добавляется в `App.tsx` (вне маршрутов, всегда виден)
+
+### Админ-панель — новая вкладка «Чаты»
+- Список всех чат-сессий (новые первыми), бейдж «Нужен оператор»
+- Клик по сессии → полная история сообщений
+- Админ может писать ответы (role = "operator"), доставляются через realtime
+
+## Файлы
+
+**Создать:**
+- `supabase/functions/chat-assistant/index.ts` — edge-функция с AI и оформлением заказа
+- `src/components/ChatWidget.tsx` — виджет чата
+- Миграция для таблиц `chat_sessions` и `chat_messages`
+
+**Изменить:**
+- `src/App.tsx` — добавить `<ChatWidget />`
+- `src/pages/AdminDashboard.tsx` — добавить вкладку «Чаты»
 
