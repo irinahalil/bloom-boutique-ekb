@@ -73,7 +73,7 @@ ${catalog || "Каталог пуст."}
         type: "function",
         function: {
           name: "place_order",
-          description: "Оформить заказ, когда клиент подтвердил выбор. Спроси имя, телефон, адрес доставки, дату и время.",
+          description: "Оформить заказ. Имя и телефон клиента уже известны — не спрашивай их. Спроси только адрес доставки, дату и время.",
           parameters: {
             type: "object",
             properties: {
@@ -89,14 +89,12 @@ ${catalog || "Каталог пуст."}
                   required: ["product_name", "quantity", "price"],
                 },
               },
-              customer_name: { type: "string" },
-              phone: { type: "string" },
               address: { type: "string" },
               delivery_date: { type: "string", description: "YYYY-MM-DD" },
               delivery_time: { type: "string" },
               comment: { type: "string" },
             },
-            required: ["items", "customer_name", "phone", "address"],
+            required: ["items", "address"],
           },
         },
       },
