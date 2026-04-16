@@ -175,6 +175,32 @@ ${catalog || "Каталог пуст."}
             }
           }
 
+          // Send Telegram notification
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/telegram-notify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${supabaseKey}`,
+              },
+              body: JSON.stringify({
+                type: "new_order",
+                data: {
+                  order_id: orderId.slice(0, 8).toUpperCase(),
+                  customer_name: args.customer_name,
+                  phone: args.phone,
+                  address: args.address,
+                  total,
+                  items: args.items,
+                  delivery_date: args.delivery_date,
+                  delivery_time: args.delivery_time,
+                },
+              }),
+            });
+          } catch (tgErr) {
+            console.error("Telegram notify error:", tgErr);
+          }
+
           return new Response(JSON.stringify({
             reply: `✅ Заказ оформлен! Номер: ${orderId.slice(0, 8).toUpperCase()}\n\nСостав:\n${args.items.map((i: any) => `• ${i.product_name} × ${i.quantity} — ${i.price * i.quantity} ₽`).join("\n")}\n\nИтого: ${total} ₽\nДоставка: ${args.address}${args.delivery_date ? `\nДата: ${args.delivery_date}` : ""}${args.delivery_time ? `, ${args.delivery_time}` : ""}\n\nМы свяжемся с вами для подтверждения! 🌷`,
           }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

@@ -60,6 +60,14 @@ const ChatWidget = () => {
     if (error || !data) return;
     setSessionId(data.id);
     setStep('chat');
+
+    // Telegram notification for new chat
+    supabase.functions.invoke('telegram-notify', {
+      body: {
+        type: 'new_chat',
+        data: { session_id: data.id, customer_name: regForm.name.trim(), phone: regForm.phone.trim() },
+      },
+    }).catch(console.error);
     setMessages([{
       role: 'assistant',
       content: `Здравствуйте, ${regForm.name}! 🌷 Я ваш AI-консультант. Помогу выбрать букет или собрать индивидуальную композицию. Что вас интересует?`,
@@ -80,6 +88,15 @@ const ChatWidget = () => {
       role: 'assistant',
       content: 'Я передаю ваш разговор нашему специалисту. Оператор подключится в ближайшее время! 🙋‍♀️',
     }]);
+
+    // Telegram notification for operator request
+    supabase.functions.invoke('telegram-notify', {
+      body: {
+        type: 'operator_request',
+        data: { session_id: sessionId, customer_name: regForm.name, phone: regForm.phone },
+      },
+    }).catch(console.error);
+
     setLoading(false);
   }, [sessionId, escalated, loading]);
 
