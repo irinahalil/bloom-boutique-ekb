@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, LogOut, Pencil, Trash2 } from 'lucide-react';
+import { Plus, LogOut, Pencil, Trash2, CalendarDays, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Product = Tables<'products'>;
