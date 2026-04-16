@@ -30,10 +30,10 @@ const Header = () => {
         </div>
 
         <nav className="hidden md:flex items-center gap-8">
-          <Link to="/catalog" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
+          <Link to="/catalog" className="font-medium text-foreground/70 hover:text-primary transition-colors text-2xl font-serif">
             Каталог
           </Link>
-          <Link to="/delivery" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
+          <Link to="/delivery" className="font-medium text-foreground/70 hover:text-primary transition-colors text-2xl font-serif">
             Доставка
           </Link>
         </nav>
