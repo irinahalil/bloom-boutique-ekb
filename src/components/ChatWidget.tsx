@@ -247,8 +247,17 @@ const ChatWidget = () => {
             </div>
           </ScrollArea>
 
-          {/* Input */}
-          <div className="p-3 border-t">
+          <div className="p-3 border-t space-y-2">
+            {!escalated && (
+              <button
+                onClick={callOperator}
+                disabled={loading}
+                className="w-full text-xs text-muted-foreground hover:text-primary flex items-center justify-center gap-1 transition-colors"
+              >
+                <UserRound className="w-3.5 h-3.5" />
+                Позвать оператора
+              </button>
+            )}
             <form
               onSubmit={e => { e.preventDefault(); sendMessage(); }}
               className="flex gap-2"
