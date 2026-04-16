@@ -59,6 +59,8 @@ export type Database = {
           comment: string | null
           created_at: string
           customer_name: string
+          delivery_date: string | null
+          delivery_time: string | null
           id: string
           phone: string
           status: Database["public"]["Enums"]["order_status"]
@@ -69,6 +71,8 @@ export type Database = {
           comment?: string | null
           created_at?: string
           customer_name: string
+          delivery_date?: string | null
+          delivery_time?: string | null
           id?: string
           phone: string
           status?: Database["public"]["Enums"]["order_status"]
@@ -79,6 +83,8 @@ export type Database = {
           comment?: string | null
           created_at?: string
           customer_name?: string
+          delivery_date?: string | null
+          delivery_time?: string | null
           id?: string
           phone?: string
           status?: Database["public"]["Enums"]["order_status"]
