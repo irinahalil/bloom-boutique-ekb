@@ -188,6 +188,22 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {[
+            { label: 'Сегодня', ...revenue.today },
+            { label: 'Неделя', ...revenue.week },
+            { label: 'Месяц', ...revenue.month },
+          ].map(s => (
+            <div key={s.label} className="bg-card border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-1">{s.label}</p>
+              <p className="font-display text-2xl font-bold">{s.total.toLocaleString('ru-RU')} ₽</p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> {s.count} {s.count === 1 ? 'заказ' : s.count < 5 ? 'заказа' : 'заказов'}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <Tabs defaultValue="orders">
           <TabsList className="mb-6">
             <TabsTrigger value="orders">Заказы {orders ? `(${orders.length})` : ''}</TabsTrigger>
