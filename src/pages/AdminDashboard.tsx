@@ -45,6 +45,7 @@ const AdminDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: orders } = useQuery({
     queryKey: ['admin-orders'],
