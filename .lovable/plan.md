@@ -1,69 +1,45 @@
 
-# 🌷 Сайт продажи тюльпанов — Екатеринбург
 
-## Концепция
-Весенний, романтичный сайт с нестандартной подачей — мягкие пастельные тона (розовый, лавандовый, мятный), плавные анимации, органичные формы вместо жёстких карточек. Уход от «стандартного магазина» — больше журнальная эстетика.
+# Plan: Admin Panel Improvements + Delivery Date/Time in Cart
 
-## Страницы и структура
+## What already works
+- Admin panel has Orders tab (with status management) and Products tab (CRUD with image upload)
+- Cart has checkout form (name, phone, address, comment)
 
-### 1. Главная (микс)
-- **Hero-блок**: атмосферная иллюстрация/фото тюльпанов с заголовком и кнопкой «Выбрать букет»
-- **Популярные букеты**: горизонтальная подборка 4–6 товаров с мягкими карточками
-- **Блок преимуществ**: свежие цветы, доставка за 2 часа, Екатеринбург
-- **Блок о доставке**: краткая инфо + ссылка на полную страницу
+## What needs to change
 
-### 2. Каталог (`/catalog`)
-- Фильтры: цвет, цена, тип (букет/поштучно/коробка)
-- Карточки с hover-эффектами, кнопка «В корзину»
+### 1. Database migration — add delivery date/time to orders
+Add two nullable columns to `orders` table:
+- `delivery_date` (date, nullable)
+- `delivery_time` (text, nullable) — stores a time slot like "10:00–12:00"
 
-### 3. Карточка товара (`/product/:id`)
-- Фото, описание, цена, количество, кнопка «В корзину»
-- Похожие товары снизу
+### 2. Cart page — add date and time picker
+- Add a date picker (Shadcn Calendar in Popover) for choosing delivery date (minimum = tomorrow)
+- Add a time slot selector (Select component) with predefined slots: "09:00–12:00", "12:00–15:00", "15:00–18:00", "18:00–21:00"
+- Save `delivery_date` and `delivery_time` into the order on submit
 
-### 4. Корзина (`/cart`)
-- Список товаров, изменение количества, удаление
-- Форма оформления: имя, телефон, адрес, комментарий
-- Отправка заявки (сохраняется в Supabase)
+### 3. Admin panel — orders improvements
+- Show delivery date and time in each order card
+- Add order filtering/sorting (by status, by date)
+- Improve the order card layout for clarity
 
-### 5. Доставка (`/delivery`)
-- Зоны доставки по Екатеринбургу, сроки, стоимость
+### 4. Admin panel — products management polish
+- Already has: create, edit, delete, image upload from file, URL fallback, category, color, in_stock toggle
+- This is already fully functional — no major changes needed since all CRUD operations and image upload from computer are working
 
-### 6. Политика конфиденциальности (`/privacy`)
-### 7. Оферта (`/offer`)
+## Technical details
 
-### 8. Хедер
-- Логотип, навигация (Каталог, Доставка), иконка корзины с бейджем
+**Migration SQL:**
+```sql
+ALTER TABLE public.orders
+  ADD COLUMN delivery_date date,
+  ADD COLUMN delivery_time text;
+```
 
-### 9. Футер
-- Контакты, ссылки на политику и оферту, соцсети
+**Files to edit:**
+- `src/pages/Cart.tsx` — add date picker + time slot selector to form, include in submit payload
+- `src/pages/AdminDashboard.tsx` — display delivery_date/time in order cards
+- New migration file for the two columns
 
-## Админка (`/admin`)
+**Dependencies:** `date-fns` (already available via calendar component)
 
-### Авторизация
-- Supabase Auth (email + пароль)
-- Таблица `user_roles` с ролью `admin`
-- RLS-политики через `has_role()` функцию
-
-### Панель администратора
-- **Заявки**: список заказов с статусами (новый/в работе/выполнен)
-- **Товары**: добавление, редактирование, удаление (название, описание, цена, фото URL, категория)
-
-## База данных (Supabase)
-
-### Таблицы:
-- `products` — id, name, description, price, image_url, category, color, in_stock, created_at
-- `orders` — id, customer_name, phone, address, comment, status, total, created_at
-- `order_items` — id, order_id, product_id, quantity, price
-- `user_roles` — id, user_id, role (enum: admin)
-
-### Безопасность:
-- RLS на всех таблицах
-- Продукты: публичное чтение, запись только admin
-- Заказы: публичная вставка (оформление), чтение/обновление только admin
-- `has_role()` security definer функция
-
-## Дизайн
-- Палитра: нежно-розовый, лавандовый, белый, мятный акцент
-- Скруглённые формы, мягкие тени
-- Плавные переходы и hover-анимации
-- Шрифт: элегантный, но читаемый
