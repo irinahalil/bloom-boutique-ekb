@@ -25,6 +25,16 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fetch customer info from chat session
+    const { data: session } = await supabase
+      .from("chat_sessions")
+      .select("customer_name, phone")
+      .eq("id", session_id)
+      .single();
+
+    const customerName = session?.customer_name || "Клиент";
+    const customerPhone = session?.phone || "";
+
     // Fetch product catalog
     const { data: products } = await supabase
       .from("products")
