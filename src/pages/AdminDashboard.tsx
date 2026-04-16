@@ -209,6 +209,9 @@ const AdminDashboard = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="orders">Заказы {orders ? `(${orders.length})` : ''}</TabsTrigger>
             <TabsTrigger value="products">Товары {products ? `(${products.length})` : ''}</TabsTrigger>
+            <TabsTrigger value="chats">
+              <MessageSquare className="w-4 h-4 mr-1" /> Чаты
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
