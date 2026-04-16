@@ -181,8 +181,23 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="orders">
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {[{ value: 'all', label: 'Все' }, { value: 'new', label: 'Новые' }, { value: 'in_progress', label: 'В работе' }, { value: 'done', label: 'Выполненные' }].map(f => (
+                <Button
+                  key={f.value}
+                  variant={statusFilter === f.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setStatusFilter(f.value)}
+                >
+                  {f.label}
+                </Button>
+              ))}
+            </div>
             <div className="space-y-4">
-              {orders?.map(order => (
+              {(orders ?? [])
+                .filter(o => statusFilter === 'all' || o.status === statusFilter)
+                .map(order => (
                 <div key={order.id} className="bg-card border rounded-2xl p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
                     <div>
@@ -196,6 +211,22 @@ const AdminDashboard = () => {
                       <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString('ru')}</p>
                     </div>
                   </div>
+                  {((order as any).delivery_date || (order as any).delivery_time) && (
+                    <div className="flex items-center gap-4 mb-3 text-sm bg-muted/50 rounded-xl px-3 py-2">
+                      {(order as any).delivery_date && (
+                        <span className="flex items-center gap-1">
+                          <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                          {format(new Date((order as any).delivery_date), 'd MMMM yyyy', { locale: ru })}
+                        </span>
+                      )}
+                      {(order as any).delivery_time && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-primary" />
+                          {(order as any).delivery_time}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {order.order_items && order.order_items.length > 0 && (
                     <div className="mb-3 border-t pt-3 space-y-1">
                       <p className="text-xs font-medium text-muted-foreground mb-1">Состав заказа:</p>
