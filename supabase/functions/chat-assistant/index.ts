@@ -25,6 +25,16 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fetch customer info from chat session
+    const { data: session } = await supabase
+      .from("chat_sessions")
+      .select("customer_name, phone")
+      .eq("id", session_id)
+      .single();
+
+    const customerName = session?.customer_name || "Клиент";
+    const customerPhone = session?.phone || "";
+
     // Fetch product catalog
     const { data: products } = await supabase
       .from("products")
@@ -41,10 +51,14 @@ serve(async (req) => {
 Вот актуальный каталог товаров:
 ${catalog || "Каталог пуст."}
 
+Данные клиента уже известны:
+- Имя: ${customerName}
+- Телефон: ${customerPhone}
+
 Твои задачи:
 1. Помочь выбрать букет или собрать индивидуальный из представленных цветов
 2. Считать стоимость заказа
-3. Когда клиент готов оформить заказ — вызови инструмент place_order
+3. Когда клиент готов оформить заказ — спроси только адрес доставки, дату и время. Имя и телефон НЕ СПРАШИВАЙ, они уже есть. Вызови place_order.
 4. Если не можешь помочь или клиент просит поговорить с человеком — вызови инструмент escalate
 
 Правила:
@@ -59,7 +73,7 @@ ${catalog || "Каталог пуст."}
         type: "function",
         function: {
           name: "place_order",
-          description: "Оформить заказ, когда клиент подтвердил выбор. Спроси имя, телефон, адрес доставки, дату и время.",
+          description: "Оформить заказ. Имя и телефон клиента уже известны — не спрашивай их. Спроси только адрес доставки, дату и время.",
           parameters: {
             type: "object",
             properties: {
@@ -75,14 +89,12 @@ ${catalog || "Каталог пуст."}
                   required: ["product_name", "quantity", "price"],
                 },
               },
-              customer_name: { type: "string" },
-              phone: { type: "string" },
               address: { type: "string" },
               delivery_date: { type: "string", description: "YYYY-MM-DD" },
               delivery_time: { type: "string" },
               comment: { type: "string" },
             },
-            required: ["items", "customer_name", "phone", "address"],
+            required: ["items", "address"],
           },
         },
       },
@@ -146,8 +158,8 @@ ${catalog || "Каталог пуст."}
 
           const { error: orderError } = await supabase.from("orders").insert({
             id: orderId,
-            customer_name: args.customer_name,
-            phone: args.phone,
+            customer_name: customerName,
+            phone: customerPhone,
             address: args.address,
             total,
             comment: args.comment || `Заказ через чат`,
@@ -187,8 +199,8 @@ ${catalog || "Каталог пуст."}
                 type: "new_order",
                 data: {
                   order_id: orderId.slice(0, 8).toUpperCase(),
-                  customer_name: args.customer_name,
-                  phone: args.phone,
+                  customer_name: customerName,
+                  phone: customerPhone,
                   address: args.address,
                   total,
                   items: args.items,
