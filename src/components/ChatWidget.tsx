@@ -66,7 +66,23 @@ const ChatWidget = () => {
     }]);
   };
 
-  const sendMessage = useCallback(async () => {
+  const callOperator = useCallback(async () => {
+    if (!sessionId || escalated || loading) return;
+    setLoading(true);
+    await supabase.from('chat_sessions').update({ needs_operator: true }).eq('id', sessionId);
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      role: 'user',
+      content: '🙋 Клиент запросил живого оператора',
+    });
+    setEscalated(true);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: 'Я передаю ваш разговор нашему специалисту. Оператор подключится в ближайшее время! 🙋‍♀️',
+    }]);
+    setLoading(false);
+  }, [sessionId, escalated, loading]);
+
     if (!input.trim() || loading || !sessionId) return;
     const text = input.trim();
     setInput('');
