@@ -204,7 +204,18 @@ const ChatWidget = () => {
                       <p className="text-xs font-medium text-primary mb-1">Оператор</p>
                     )}
                     <div className="prose prose-sm max-w-none [&>p]:m-0">
-                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          img: ({ src, alt }) => (
+                            <img
+                              src={src}
+                              alt={alt || ''}
+                              className="rounded-xl max-w-full h-auto my-2 shadow-sm"
+                              loading="lazy"
+                            />
+                          ),
+                        }}
+                      >{m.content}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
