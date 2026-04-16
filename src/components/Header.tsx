@@ -1,18 +1,33 @@
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Menu, X } from 'lucide-react';
+import { ShoppingBag, Menu, X, Moon, Sun } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Header = () => {
   const { totalItems } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, [dark]);
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="font-display text-2xl md:text-3xl font-semibold text-primary tracking-wide">
-          🌷 Тюльпаны Екб
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setDark(!dark)}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+            aria-label="Переключить тему"
+          >
+            {dark ? <Sun className="w-5 h-5 text-foreground/70" /> : <Moon className="w-5 h-5 text-foreground/70" />}
+          </button>
+          <Link to="/" className="font-display text-2xl md:text-3xl font-semibold text-primary tracking-wide">
+            🌷 Тюльпаны Екб
+          </Link>
+        </div>
 
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/catalog" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
