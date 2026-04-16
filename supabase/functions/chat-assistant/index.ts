@@ -28,11 +28,11 @@ serve(async (req) => {
     // Fetch product catalog
     const { data: products } = await supabase
       .from("products")
-      .select("name, price, category, color, in_stock, description")
+      .select("name, price, category, color, in_stock, description, image_url")
       .eq("in_stock", true);
 
     const catalog = (products ?? [])
-      .map((p: any) => `- ${p.name}: ${p.price} ₽, категория: ${p.category}${p.color ? `, цвет: ${p.color}` : ""}${p.description ? ` (${p.description})` : ""}`)
+      .map((p: any) => `- ${p.name}: ${p.price} ₽, категория: ${p.category}${p.color ? `, цвет: ${p.color}` : ""}${p.description ? ` (${p.description})` : ""}${p.image_url ? ` | фото: ${p.image_url}` : ""}`)
       .join("\n");
 
     const systemPrompt = `Ты — AI-консультант цветочного магазина «Тюльпаны Екб» в Екатеринбурге.
@@ -50,6 +50,7 @@ ${catalog || "Каталог пуст."}
 Правила:
 - Рекомендуй только товары из каталога
 - Всегда указывай цены
+- Когда рекомендуешь товар, обязательно вставляй его фото в формате ![название](url). URL бери из каталога (поле "фото:")
 - Будь кратким, но полезным
 - Отвечай на русском языке`;
 
