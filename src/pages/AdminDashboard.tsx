@@ -71,7 +71,19 @@ const AdminDashboard = () => {
     enabled: isAdmin,
   });
 
-  const updateOrderStatus = useMutation({
+  const revenue = useMemo(() => {
+    const doneOrders = (orders ?? []).filter(o => o.status === 'done');
+    const calc = (filterFn: (date: Date) => boolean) => {
+      const filtered = doneOrders.filter(o => filterFn(new Date(o.created_at)));
+      return { total: filtered.reduce((s, o) => s + Number(o.total), 0), count: filtered.length };
+    };
+    return {
+      today: calc(d => isToday(d)),
+      week: calc(d => isThisWeek(d, { weekStartsOn: 1 })),
+      month: calc(d => isThisMonth(d)),
+    };
+  }, [orders]);
+
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from('orders').update({ status: status as 'new' | 'in_progress' | 'done' }).eq('id', id);
       if (error) throw error;
