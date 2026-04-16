@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -65,6 +65,23 @@ const ChatWidget = () => {
       content: `Здравствуйте, ${regForm.name}! 🌷 Я ваш AI-консультант. Помогу выбрать букет или собрать индивидуальную композицию. Что вас интересует?`,
     }]);
   };
+
+  const callOperator = useCallback(async () => {
+    if (!sessionId || escalated || loading) return;
+    setLoading(true);
+    await supabase.from('chat_sessions').update({ needs_operator: true }).eq('id', sessionId);
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      role: 'user',
+      content: '🙋 Клиент запросил живого оператора',
+    });
+    setEscalated(true);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: 'Я передаю ваш разговор нашему специалисту. Оператор подключится в ближайшее время! 🙋‍♀️',
+    }]);
+    setLoading(false);
+  }, [sessionId, escalated, loading]);
 
   const sendMessage = useCallback(async () => {
     if (!input.trim() || loading || !sessionId) return;
@@ -230,8 +247,17 @@ const ChatWidget = () => {
             </div>
           </ScrollArea>
 
-          {/* Input */}
-          <div className="p-3 border-t">
+          <div className="p-3 border-t space-y-2">
+            {!escalated && (
+              <button
+                onClick={callOperator}
+                disabled={loading}
+                className="w-full text-xs text-muted-foreground hover:text-primary flex items-center justify-center gap-1 transition-colors"
+              >
+                <UserRound className="w-3.5 h-3.5" />
+                Позвать оператора
+              </button>
+            )}
             <form
               onSubmit={e => { e.preventDefault(); sendMessage(); }}
               className="flex gap-2"
