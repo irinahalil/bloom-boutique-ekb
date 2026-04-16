@@ -375,6 +375,10 @@ const AdminDashboard = () => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="chats">
+            <AdminChats />
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
