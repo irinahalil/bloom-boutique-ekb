@@ -158,8 +158,8 @@ ${catalog || "Каталог пуст."}
 
           const { error: orderError } = await supabase.from("orders").insert({
             id: orderId,
-            customer_name: args.customer_name,
-            phone: args.phone,
+            customer_name: customerName,
+            phone: customerPhone,
             address: args.address,
             total,
             comment: args.comment || `Заказ через чат`,
