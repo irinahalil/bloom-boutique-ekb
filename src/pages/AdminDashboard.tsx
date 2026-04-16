@@ -46,19 +46,6 @@ const AdminDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const revenue = useMemo(() => {
-    const doneOrders = (orders ?? []).filter(o => o.status === 'done');
-    const calc = (filterFn: (date: Date) => boolean) => {
-      const filtered = doneOrders.filter(o => filterFn(new Date(o.created_at)));
-      return { total: filtered.reduce((s, o) => s + Number(o.total), 0), count: filtered.length };
-    };
-    return {
-      today: calc(d => isToday(d)),
-      week: calc(d => isThisWeek(d, { weekStartsOn: 1 })),
-      month: calc(d => isThisMonth(d)),
-    };
-  }, [orders]);
-
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: orders } = useQuery({
