@@ -199,8 +199,8 @@ ${catalog || "Каталог пуст."}
                 type: "new_order",
                 data: {
                   order_id: orderId.slice(0, 8).toUpperCase(),
-                  customer_name: args.customer_name,
-                  phone: args.phone,
+                  customer_name: customerName,
+                  phone: customerPhone,
                   address: args.address,
                   total,
                   items: args.items,
