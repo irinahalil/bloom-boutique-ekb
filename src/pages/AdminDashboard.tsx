@@ -84,6 +84,7 @@ const AdminDashboard = () => {
     };
   }, [orders]);
 
+  const updateOrderStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from('orders').update({ status: status as 'new' | 'in_progress' | 'done' }).eq('id', id);
       if (error) throw error;
