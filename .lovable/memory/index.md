@@ -13,3 +13,4 @@ Anonymous checkout enabled via open RLS (INSERT) and client-side ID generation.
 - [Ecommerce Features](mem://features/ecommerce) — Tulip shop for Yekaterinburg, catalog filters, cart
 - [Admin Panel](mem://features/admin-panel) — Catalog CRUD, order management with statuses
 - [AI Chat Bot](mem://features/chat-bot) — Floating chat widget with AI assistant, order placement, operator escalation
+- [Telegram Notifications](mem://features/telegram-notifications) — Order, operator, new chat alerts to admin via Telegram bot
