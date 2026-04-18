@@ -30,7 +30,7 @@ const Index = () => {
             <p className="text-sm font-medium text-primary tracking-widest uppercase mb-4">
               Екатеринбург
             </p>
-            <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight mb-6">
+            <h1 className="font-display text-6xl md:text-8xl lg:text-9xl font-bold leading-[1.05] mb-6">
               Тюльпаны,
               <br />
               <span className="text-primary italic">которые вдохновляют</span>
